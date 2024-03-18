@@ -3,6 +3,22 @@ const pgPromise = require("pg-promise");
 
 const db = pgPromise()("postgres://postgres:123abc@localhost:5432/video");
 
+const setupDb = async () => {
+  await db.none(`
+  DROP TABLE IF EXISTS planets;
+  
+  CREATE TABLE planets(
+    id SERIAL NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    image TEXT
+  );
+  `);
+
+  await db.none(`INSERT INTO planets (name) VALUES ('Earth')`)
+  await db.none(`INSERT INTO planets (name) VALUES ('Mars')`)
+}
+setupDb()
+
 const planetSchema = Joi.object({
   name: Joi.string().required(),
 });
@@ -35,16 +51,6 @@ const getOneById = async (req, res) => {
 
 
 const create = async (req, res) => {
-  /*const { name } = req.body;
-   try {
-    const newPlanet = await db.one(
-      `INSERT INTO planets (name) VALUES ($1) RETURNING *`,
-      name
-    );
-    return res.status(201).json({ newPlanet });
-  } catch (error) {
-    return res.status(400).json({ message: "Error creating planet", error });
-  } */
   const { name } = req.body;
   const newPlanet = { name };
   const valiedateNewPlanet = planetSchema.validate(newPlanet)
@@ -85,4 +91,18 @@ const deleteById = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getOneById, create, updateById, deleteById };
+const createImage = async (req, res) => {
+  console.log(req.file);
+  const { id } = req.params;
+  const fileName = req.file?.path;
+
+  if (fileName) {
+    db.none(`UPDATE planets SET image=$2 WHERE id=$1`, [id, fileName]);
+    res.status(201).json({ msg: "planet img caricata" })
+  } else {
+    res.status(400).json({ message: "fail to upload img" })
+  }
+
+}
+
+module.exports = { getAll, getOneById, create, updateById, deleteById, createImage };
