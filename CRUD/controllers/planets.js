@@ -73,4 +73,19 @@ const deleteById = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getOneById, create, updateById, deleteById };
+const createImage = async (req, res) => {
+  const { id } = req.params;
+  const fileName = req.file?.path;
+
+  if (fileName) {
+    db.none(`UPDATE planets SET image=$2 WHERE id=$1`, [id, fileName]);
+    res.status(201).json({ msg: "Planet image uploaded succesfully" })
+  } else {
+    res.status(400).json({ msg: "plaent image failedto upload" })
+  }
+}
+
+
+
+
+module.exports = { getAll, getOneById, create, updateById, deleteById, createImage };
